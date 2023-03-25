@@ -1,7 +1,11 @@
 import glob
+import json
 import os
 import re
 from collections import Counter
+from pathlib import Path
+from multiprocessing import Pool
+import time
 
 from PyPDF2 import PdfReader
 
@@ -12,7 +16,8 @@ def find_keywords(folder, file, keywords_to_find):
     kwrds = []
     print(keywords_to_find)
 
-    pdf = PdfReader("C:/FER/projektR/" + folder + "/" + file)
+    pdf_path = Path("C:/FER/projektR") / folder / file
+    pdf = PdfReader(str(pdf_path))
     for page in pdf.pages:
         text = page.extract_text()
         text = ''.join(text.split())
@@ -27,12 +32,21 @@ if __name__ == "__main__":
     folder = "01 S_P IEEE"
     keywords_to_find = get_keywords()
     keywords = []
+
     os.chdir("C:/FER/projektR/" + folder)
+    start = time.time()
 
-    for file in glob.glob("*.pdf"):
-        keywords.extend(find_keywords(folder, file, keywords_to_find))
-        # break
+    with Pool() as pool:
+        keywords = pool.starmap(find_keywords, [(folder, file, keywords_to_find) for file in glob.glob("*.pdf")])
 
-    keywords_count = dict(Counter(keywords))
+    keywords_count = dict(Counter(keyword for sublist in keywords for keyword in sublist))
 
-    print(keywords_count)
+    keywords_count_sorted = dict(
+        sorted(keywords_count.items(), key=lambda x: x[1], reverse=True)
+    )
+
+    end = time.time()
+    print(end - start)
+
+    with open("./found_keywords.json", "w") as outfile:
+        json.dump(keywords_count_sorted, outfile)
