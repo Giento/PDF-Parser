@@ -1,5 +1,4 @@
 import glob
-import json
 import os
 import time
 from collections import Counter
@@ -7,24 +6,29 @@ from concurrent.futures import ProcessPoolExecutor
 
 from MySearch import get_folders, get_urls
 
+
 def process_pdf_file(file, folder):
     pdf_urls = get_urls(folder, file)
     file_urls = {}
-    for url in pdf_urls:
+    for url, page_num in pdf_urls:
         if url not in file_urls:
-            file_urls[url] = {'count': 1, 'pdf_files': {file}}
+            file_urls[url] = {'count': 1, 'pdf_files': {file}, 'page_nums': [page_num]}
         else:
             file_urls[url]['count'] += 1
             file_urls[url]['pdf_files'].add(file)
+            file_urls[url]['page_nums'].append(page_num)
     return file_urls
+
 
 def merge_url_dicts(dict1, dict2):
     for url, data in dict2.items():
         if url not in dict1:
-            dict1[url] = data
+            dict1[url] = {'count': data['count'], 'pdf_files': data['pdf_files'], 'page_nums': [data['page_nums']]}
         else:
             dict1[url]['count'] += data['count']
             dict1[url]['pdf_files'].update(data['pdf_files'])
+            dict1[url]['page_nums'].extend(data['page_nums'])
+
 
 if __name__ == "__main__":
     # getting all folders in current working directory
