@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import time
 from collections import Counter
@@ -32,7 +33,7 @@ def merge_url_dicts(dict1, dict2):
 
 if __name__ == "__main__":
     # getting all folders in current working directory
-    folders = get_folders()[0:4]
+    folders = get_folders()
 
     urls = {}
 
@@ -61,10 +62,18 @@ if __name__ == "__main__":
 
     end = time.time()
 
-    print(occurrences_sorted)
+    print(type(occurrences_sorted))
 
     print(end - start)
 
     with open("C:/FER/projektR/occurrences_multi.json", "w") as outfile:
-        pass
-        # json.dump(occurrences, outfile)
+        occurrences_serializable = {
+            url: {
+                'count': data['count'],
+                'pdf_files': list(data['pdf_files']),
+                'page_nums': data['page_nums'],
+                'pdfs_count': data['pdfs_count']
+            }
+            for url, data in occurrences_sorted.items()
+        }
+        json.dump(occurrences_serializable, outfile)
